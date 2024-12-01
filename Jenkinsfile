@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "staticwebsite:latest"
+        DOCKER_IMAGE = "staticwebsite:develop-${BUILD_ID}"
     }
     stages {
         stage('Clone Repository') {
@@ -26,10 +26,11 @@ pipeline {
     }
     post {
         success {
-            echo 'Build and deployment successful for main branch.'
+            echo 'Build and deployment successful for develop branch.'
         }
         failure {
-            echo 'Build failed for main branch.'
+            echo 'Build failed for develop branch.'
         }
     }
 }
+
