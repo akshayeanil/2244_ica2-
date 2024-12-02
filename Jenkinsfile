@@ -1,35 +1,23 @@
 pipeline {
     agent any
-    environment {
-        DOCKER_IMAGE = "staticwebsite:latest"
-    }
     stages {
-        stage('Clone Repository') {
+        
+stage('Build and run docker image') {
             steps {
-                git 'https://github.com/akshayeanil/2244_ica2-.git'
+                
+                sh 'docker stop staticwebsite || true && docker rm staticwebsite || true'
+                sh "docker pull akshayeanil/staticwebsite:latest" 
+                sh 'docker run --name staticwebsite -d -p 8082:80 akshayeanil/staticwebsite:latest'
+            } 
+        }
+
+
+      
+        stage('testing') {
+            steps {
+                sh 'curl -I 34.204.13.156:8082'
             }
         }
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
-            }
-        }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    sh 'docker push $DOCKER_IMAGE'
-                }
-            }
-        }
-    }
-    post {
-        success {
-            echo 'Build and deployment successful for main branch.'
-        }
-        failure {
-            echo 'Build failed for main branch.'
-        }
+      
     }
 }
