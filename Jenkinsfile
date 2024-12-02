@@ -1,36 +1,57 @@
 pipeline {
     agent any
-    environment {
-        DOCKER_IMAGE = "staticwebsite:develop-${BUILD_ID}"
-    }
     stages {
-        stage('Clone Repository') {
+        stage('Cleanup') {
             steps {
-                git 'https://github.com/akshayeanil/2244_ica2-.git'
+                cleanWs()
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Clone Git Repo') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
-                }
+                checkout scm
             }
         }
-        stage('Push Docker Image') {
+        stage('Clone from repository') {
             steps {
-                script {
-                    sh 'docker push $DOCKER_IMAGE'
-                }
+                git url: 'https://github.com/akshayeanil/2244_ica2-.git', branch: 'develop'
             }
         }
-    }
-    post {
-        success {
-            echo 'Build and deployment successful for develop branch.'
+
+        
+stage('Build and run docker image') {
+            steps {
+                sh 'docker build -t akshayeanil/staticwebsite:latest .'
+                sh 'docker stop myapp || true && docker rm myapp || true'
+                sh "docker tag akshayeanil/staticwebsite:latest akshayeanil/staticwebsite:develop-${env.BUILD_ID}" 
+                sh 'docker run --name myapp -d -p 8081:80 akshayeanil/staticwebsite:latest'
+            } 
         }
-        failure {
-            echo 'Build failed for develop branch.'
+
+
+        stage('Build and Push') {
+            steps {
+                echo 'Building..'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh '''
+                            docker login -u ${USERNAME} -p ${PASSWORD}
+                        '''
+                      
+                    }
+            }
         }
+        stage('testing') {
+            steps {
+                sh 'curl -I 34.204.13.156:8080'
+            }
+        }
+       stage('pushing') {
+            steps {
+                  sh "docker push akshayeanil/staticwebsite:latest"
+                  sh "docker push akshayeanil/staticwebsite:develop-${env.BUILD_ID}"
+            }
+        }
+    
     }
 }
 
